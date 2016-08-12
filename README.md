@@ -1,5 +1,19 @@
 # ICME Summer Short Course on R, 2016
 
+## Topics
+
+*Place an 'x' in the box when you're done!*
+0. [ ] **Basic R.** Andreas
+1. [ ] **Apply functions in R.** Andreas
+2. [ ] **Plotting in R.** Andreas for ggmap
+3. [ ] **dplyr, data.table** Andreas
+4. [ ] **Parallel R** Andreas
+5. [ ] **Statistical applications in R** Lan
+6. [ ] **...** Lan
+
+### R question assignments
+- [x] **Question 5**: Andreas
+
 ### For instructors, a quick reminder.
 "I want to make a new change to the file! What do I do?"
 
