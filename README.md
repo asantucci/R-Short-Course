@@ -3,13 +3,13 @@
 ## Topics
 
 *Place an 'x' in the box when you're done!*
-0. [ ] **Basic R.** Andreas
-1. [ ] **Apply functions in R.** Andreas
-2. [ ] **Plotting in R.** Andreas for ggmap
-3. [ ] **dplyr, data.table** Andreas
-4. [ ] **Parallel R** Andreas
-5. [ ] **Statistical applications in R** Lan
-6. [ ] **...** Lan
+- [ ] **Basic R.** Andreas
+- [ ] **Apply functions in R.** Andreas
+- [ ] **Plotting in R.** Andreas for ggmap
+- [ ] **dplyr, data.table** Andreas
+- [ ] **Parallel R** Andreas
+- [ ] **Statistical applications in R** Lan
+- [ ] **...** Lan
 
 ### R question assignments
 - [x] **Question 5**: Andreas
