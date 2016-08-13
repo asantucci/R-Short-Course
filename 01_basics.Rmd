@@ -160,7 +160,7 @@ Lists are the most important construct in R. A list is a collection of named
 (possibly heterogeneous) objects.
 
 ```{r}
-myInfo <- list(first = "Andreas", last = "Santucci")
+myInfo <- list(first = "Joe", last = "Schmoe")
 
 myInfo
 ```
@@ -191,6 +191,8 @@ myInfo$Age <- 26
 myInfo$siblings <- c(brothers = 1, sisters = 1)
 
 myInfo
+names(myInfo)
+str(myInfo)
 ```
 
 # Data-Frames
@@ -206,7 +208,7 @@ data$weight
 data[[ncol(data)]]
 ```
 
-## Factors
+## A note on the `factor` class
 Alongside `integer` and `character`, R also has a class of type `factor`. This is a class which posses *named levels*, each paired with a unique integer value.
 Factors can be useful for regression modeling and plotting. Specifically,
 they can model fixed-effects regressions with indicators very easily and also enable plotting by group in `ggplot2`.
@@ -220,6 +222,8 @@ Notice that R default behavior is to read a string-column in as a factor variabl
 head(data.frame)
 default.stringsAsFactors()
 ```
+
+A new user may find themselves always converting factors to strings, and subsequently may attempt to tamper the default settings in R. This is not recommended, since it means that your R code is no longer portable from one machine to another. For more, see the following StackOverflow [thread](http://stackoverflow.com/questions/8177921/how-to-disable-stringsasfactors-true-in-data-frame-permanently).
 
 ### Factor labels are not the same as levels
 One of the benefits of factors relies on how R stores them. However, 
