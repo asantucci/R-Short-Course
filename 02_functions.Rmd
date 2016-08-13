@@ -48,5 +48,31 @@ myFunction(pi/2)
 myFunction(pi)
 ```
 
+# Modes of Calling functions
+We defined a named function above. Some functions may actually come in the form of *binary operators*. For example, the addition operator.
 
+```{r,results='hold'}
+1 + 10     # Infix notation.
+`+`(1, 10) # Prefix notation.
+```
 
+Notice that we may either use infix or prefix notation to call the function `+` on the arguments `1` and `10`.
+
+# Functions as arguments. A Toy Example
+Realize that in R, many functions are already vectorized, such as `+`.
+```{r}
+1:10 + 21:30
+```
+
+However, what if we were to consider how one might implement the `sum` operator given a higher order function `Reduce`. Reduce takes as argument a *binary-function* `f` and an object `x`. The function is applied on the elements of the input object `x`, and the result returned. 
+
+```{r}
+mySum  <- function(x) Reduce(`+`, x)
+myProd <- function(x) Reduce(`*`, x)
+
+identical( mySum(1:10),  sum(1:10))
+all.equal(myProd(1:10), prod(1:10))  # Use all.equal to ignore type-difference.
+```
+
+# Next: `Apply` Functions
+In the next section, we'll learn about `apply` functions, which themselves take in an object `X` with positive length and a function `FUN`; the function `FUN` is then applied to each element of object `X`.

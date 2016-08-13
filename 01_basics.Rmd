@@ -12,6 +12,7 @@ We evaluate a couple elementary mathematical expressions.
 sqrt(100)
 ```
 
+The `[1]` tells us the index of the first item in the row is 1.
 Notice that `pi` is a built-in constant. There are a select
 few other constants defined for each R session, such as months
 
@@ -27,7 +28,11 @@ head(letters)
 tail(LETTERS)
 ```
 
-Both of these are examples of *character-vectors*, i.e. a vector in which each element itself is a character-string.
+Both of these are examples of *character-vectors*, i.e. a vector in which each element itself is a character-string. We can access individual elements of a vector by using the `[` operator.
+
+```{r}
+letters[2]
+```
 
 R makes it easy to work with dates.
 
@@ -64,7 +69,21 @@ c(1, 10, 100)      # A vector with integers 1, 10, and 100.
 seq(1, 10, by = 3) # A sequence of numbers, from 1 to 10, by 3's.
 ```
 
-## Assignment Operator
+## Accessing elements of a Vector
+All of the resulting arrays may have individual elements accessed,
+either one at a time, all at once, or particular subsets.
+
+```{r, results='hold'}
+b <- 101:129
+b[1:6]  # Access first six elements of 'b' vector.
+
+idx <- c(1, 6, 14)
+b[idx]      # Access only select elements in our index.
+b[rev(idx)] # Access elements at positions 'idx' in *reverse* order.
+b[-idx]     # Access every element in 'b' except those at 'idx' positions.
+```
+
+# Assignment Operator
 We've seen already that we may use the assignment operator `<-` in order to
 declare variables. Note that R is dynamically typed, which means that variable
 names are not statically fixed to a particular type or class of object.
@@ -81,7 +100,7 @@ y <- sample(0:1, size = length(x), replace = T)
 class(x)
 ```
 
-## Vector Arithmetic
+# Vector Arithmetic
 Often, functions in base R are *vectorized*. That is, a function may be applied to an entire vector at once. Examples:
 
 ```{r, results='hold'}
@@ -90,7 +109,7 @@ sqrt(1:4)
 1:4 + seq(0, pi, length.out = 4)
 ```
 
-## Recycling
+# Recycling
 If an operator (such as `+`, `-`, or `^`) is applied to two vectors of different
 lengths, R implicitly performs recycling by repeating the shorter vector (possibly a partial fraction of times) until the length of the longer vector is reached.
 
@@ -110,17 +129,24 @@ This means things can be recycled *evenly*...
 Note that a warning is *not* an error; this means that your code will continue to run.
 
 # Booleans in R
-We may also use `TRUE` or `FALSE` (or `1` and `0`) as Boolean values. These may be used in (non)-obvious ways.
+We may also use `TRUE` or `FALSE` (or `1` and `0`) as Boolean values. 
+We may use Boolean vectors to indicate which elements to return when
+slicing arrays.
+
+```{r,results='hold'}
+head(b)
+head(b %% 3)
+head(b %% 3 == 0)
+b[b %% 3 == 0]    # Get entries of 'b' which are a multiple of 3.
+```
+
+### Booleans and numbers
+The fact that numeric values also evaluate to `TRUE` if non-zero, and `FALSE` is zero may be used in (non)-obvious ways. Conversely, `TRUE` and `FALSE` evaluate to zero and one respectively when used in mathematical expressions.
 
 ```{r}
-if (sample(month.abb[1:3], 1) == 'Jan') {
-    print("Lucky!")
-} else {
-    print("Unlucky!") 
-}
-
-if (1) print("Anything non-zero is true")
-if (0) print("Zeros are always evaluated as false")
+if (1)   print("Anything non-zero is true")
+if (-.4) print("Even really small negative values")
+if (0)   print("Zeros are always evaluated as false")
 
 if (!FALSE) print("We can negate a logical using the ! operator")
 ```
@@ -137,6 +163,12 @@ You've already seen vectors in R. Indexing matrices works the same way.
 ```{r}
 m <- matrix(1:9, nrow = 3)
 m[1:2, 1:2]
+```
+
+To access all rows (or columns) just omit the corresponding index.
+
+```{r}
+m[1:2, ]  # Extract first two rows, and all columns.
 ```
 
 It turns out that actually, a matrix is simply a vector *with attributes*;
