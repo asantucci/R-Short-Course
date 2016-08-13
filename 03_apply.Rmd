@@ -1,0 +1,82 @@
+---
+title:  "Applying Functions in R"
+author: "Andreas Santucci"
+output: html_document
+---
+
+One of the reasons R is so powerful is because data-manipulation is so flexible.
+A core function that allows this is the `apply` family of functions, which allow
+a user to apply a function to every element in an input (vector or list).
+
+
+# Toy Model
+Consider a function which takes a numeric input and returns the input plus some random noise.
+
+```{r}
+FUN <- function(x, max = 100, PREDICTABLE = F, seed = 12345) {
+if (PREDICTABLE) set.seed(seed)
+x + sample(1:max, 1)
+}
+a <- 1:10
+FUN(a)
+```
+
+## Surprised? 
+Recall [Abelson and Sussman](http://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-001-structure-and-interpretation-of-computer-programs-spring-2005/).
+
+* `FUN` is *evaluated to get the procedure*, i.e. adding the input argument to the randomly sampled number between one and one-hundred.
+* The *operand is evaluated* (in this case `1:10`), and R copies these values to the procedure obtained from the first step.
+* The *procedure is applied to the argument* (**once**), which in this case is to add a single random number to the values one through ten. 
+
+Perhaps we instead intended to apply the function to each element in our input `a`, the numbers one through ten.
+
+```{r}
+set.seed(1)
+sapply(a, FUN)
+set.seed(1)
+for (i in a) print(FUN(i))
+```
+
+# Why Apply?
+Two great things about apply functions.
+
+1. All functions (including `apply`) create their own environments, hence users may safely pass their data to `apply` functions, knowing that the resulting output may be inspected, and the original data will be unaltered.
+
+2. `apply` functions automatically create a vector of appropriate size to store the output.
+
+So really, `apply` is just like a fancy version of pre-allocating a vector, doing a for-loop, then writing the results of the for-loop into the vector.
+
+# Passing arguments to Apply
+Thanks to the `...` argument of `apply`, we may easily pass arguments
+from our parent `apply` function to the function we are actually
+applying.
+
+```{r}
+FUN(1, max = 500)
+
+sapply(1:10, FUN, max = 999)  # Argument 'max = 999' is passed to function 'FUN'
+```
+
+# Reading in data with `lapply`
+You might want to read in all the `.csv` files within your current working
+directory. To do this,
+
+```{r}
+files <- list.files(pattern = 'csv$')
+data <- lapply(files, read.csv) # Preferably data.table:::fread
+data <- do.call(rbind, data)    # Preferably plyr:::ldply / data.table:::rbindlist
+```
+# What's the difference between (`s`/`l`) `apply`?
+Notice that an `sapply` is just an `lapply` with options 
+defaulted to `simplify = TRUE` and `use.names = TRUE`. That is,
+in calling `sapply`, you are really just calling `lapply` with the hope that the output may be simplified to a smaller dimension without loss of structure/information, and that you wish for the output to be a named list. 
+Of course, you can toggle these options accordingly.
+
+```{r}
+identical({set.seed(1); lapply(a, FUN)},
+          {set.seed(1); sapply(a, FUN, simplify = F)})
+```
+
+In this case, our input object `a` did not have names to start with, hence our output from the `sapply` is not named either.
+
+# Iterative over multiple inputs
