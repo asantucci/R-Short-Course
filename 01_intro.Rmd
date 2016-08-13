@@ -1,6 +1,50 @@
 ---
-title:  "Intro to R"
+title:  "Introduction to R"
 author: "Andreas Santucci"
 output: html_document
 ---
+
+# Loading Data
+We often want to start by loading some data into R. There are several basic ways. We may use the `read.table` command to read from a variety of different inputs. For example, we can read data from a web-page.
+
+```{r}
+data <- read.table('http://www.stats.ox.ac.uk/pub/datasets/csb/ch11b.dat')
+head(data)
+```
+
+# Inspecting Data
+What are the dimensions of our data?
+
+```{r}
+dim(data)
+```
+
+When our data is read, it is converted to a type of object in R called a `data.frame`. This is a way to hold a collection of vectors (numeric, character, or mixed) each the same length but possibly different types. We may index the rows and columns easily
+
+```{r}
+data[3:10, 2:ncol(data)]
+```
+
+We might wish to know how our data are *structured*, in which case we may use the `str` command.
+
+```{r}
+str(data)
+```
+
+This tells us the dimensions of our data, the column names, their respective data-types, and the first few entries in each column. We might also apply the
+`summary` function to learn several statistics of our data.
+
+```{r}
+summary(data)
+```
+
+# Visualizing Data
+We can easily display graphical summaries of our data using basic commands like
+`hist` and `plot` for histograms and two-way scatter plots respectively.
+
+```{r}
+hist(data$V3)
+plot(data$V3, data$V4)
+```
+
 
