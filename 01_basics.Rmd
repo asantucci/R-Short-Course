@@ -1,5 +1,5 @@
 ---
-title:  "Basic Operations in R"
+title:  "Basic Operations and Data-Types in R"
 author: "Andreas Santucci"
 output: html_document
 ---
@@ -135,8 +135,16 @@ mean(c(TRUE, TRUE, FALSE))
 You've already seen vectors in R. Indexing matrices works the same way.
 
 ```{r}
-m <- matrix(1:9, nrow = 3, byrow = T)
+m <- matrix(1:9, nrow = 3)
 m[1:2, 1:2]
+```
+
+It turns out that actually, a matrix is simply a vector *with attributes*;
+specifically, a matrix is a vector arranged by column.
+
+```{r}
+str(m)
+m[4]  # Non-conventional: Access the fourth element in the matrix
 ```
 
 Note that the entries in a matrix must be homogeneous. E.g., it is permissible
@@ -197,3 +205,29 @@ data[['id']]
 data$weight
 data[[ncol(data)]]
 ```
+
+## Factors
+Alongside `integer` and `character`, R also has a class of type `factor`. This is a class which posses *named levels*, each paired with a unique integer value.
+Factors can be useful for regression modeling and plotting. Specifically,
+they can model fixed-effects regressions with indicators very easily and also enable plotting by group in `ggplot2`.
+
+However, there are some peculiarities to factors that may lead new users to be wary.
+
+### R defaults to strings as factors
+Notice that R default behavior is to read a string-column in as a factor variable in data-frames.
+
+```{r}
+head(data.frame)
+default.stringsAsFactors()
+```
+
+### Factor labels are not the same as levels
+One of the benefits of factors relies on how R stores them. However, 
+it may feel awkward to new users that creating a factor of month-labels
+yields levels which are placed in alphabetical (and not temporal)
+order.
+
+```{r}
+as.factor(month.abb)
+```
+
