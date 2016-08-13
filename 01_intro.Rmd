@@ -4,7 +4,8 @@ author: "Andreas Santucci"
 output: html_document
 ---
 
-# Loading Data
+# A 10,000 foot overview
+## Loading Data
 We often want to start by loading some data into R. There are several basic ways. We may use the `read.table` command to read from a variety of different inputs. For example, we can read data from a web-page.
 
 ```{r}
@@ -12,7 +13,7 @@ data <- read.table('http://www.stats.ox.ac.uk/pub/datasets/csb/ch11b.dat')
 head(data)
 ```
 
-# Inspecting Data
+## Inspecting Data
 What are the dimensions of our data?
 
 ```{r}
@@ -38,7 +39,7 @@ This tells us the dimensions of our data, the column names, their respective dat
 summary(data)
 ```
 
-# Visualizing Data
+## Visualizing Data
 We can easily display graphical summaries of our data using basic commands like
 `hist` and `plot` for histograms and two-way scatter plots respectively.
 
@@ -47,4 +48,117 @@ hist(data$V3)
 plot(data$V3, data$V4)
 ```
 
+## Modeling
+We can easily construct a *linear model* using `lm`.
 
+```{r}
+model <- lm(V4 ~ V3, data)
+summary(model)
+```
+
+Notice that when the `summary` function is called, its behavior depends on its
+input argument type.
+
+```{r, results='hold'}
+print("Summary of a data-frame");   summary(data);
+print("Summary of a linear model"); summary(model);
+```
+
+That's a 10,000 foot overview of what a typical work-flow in R may look like. Let's dive into the basics a bit further.
+
+# Manipulation of Data
+R is a fancy calculator.
+
+```{r, results='hold'}
+2 * pi
+sqrt(100)
+```
+
+Notice that `pi` is a built-in constant. There are a select
+few other constants defined for each R session, such as months
+
+```{r, results='hold'}
+head(month.abb)
+tail(month.name)
+```
+
+or the alphabet.
+
+```{r, results='hold'}
+head(letters)
+tail(LETTERS)
+```
+
+R makes it easy to work with dates.
+
+```{r, results='hold'}
+x <- seq(from = as.Date('Jan 01, 2004', format = '%b %d, %Y'),
+         to   = as.Date('2004-12-31'),
+         by   = 'day')
+table(months(x))
+
+which(x == '2004-09-01')
+length(x)                  # Leap year!
+```
+
+## Vectors
+The months and alphabets printed above are actually vectors.
+It is easy to create a vector of numbers in different ways. We present
+the `:` "through" operator, and the functions `c` and
+`seq` ("concatenate" and "sequence" respectively).
+
+```{r, results = 'hold'}
+1:10               # Integers 1 through 10.
+c(1, 10, 100)      # A vector with integers 1, 10, and 100.
+seq(1, 10, by = 3) # A sequence of numbers, from 1 to 10, by 3's.
+```
+
+## Assignment Operator
+We've seen already that we may use the assignment operator `<-` in order to
+declare variables. Note that R is dynamically typed.
+
+```{r, results='hold'}
+x <- sample(letters, size = 10)
+class(x)
+```
+
+```{r, results='hold'}
+x <- sample(1:10)
+y <- sample(0:1, size = length(x), replace = T)
+
+class(x)
+class(y)
+```
+
+R let's user's easily create vectors of numbers. We may assign numbers and 
+vectors to variables.
+
+
+often, functions in base R are *vectorized*. That is, a function may be applied to an entire vector at once.
+
+```{r, results='hold'}
+x <- seq(from = 0, to = 2*pi, by = 0.01)
+length(x)
+head(x)
+tail(x)
+```
+
+```{r}
+plot(x, sin(x), type = 'l')
+```
+
+
+# Objects in R
+R is an *object-oriented* programming language. There are *classes* in R which
+support various types of *methods*. Every object has a class.
+
+```{r}
+class(data)
+class(model)
+```
+
+When we fed `data` (of type `data-frame`) to `summary`, the function first
+inspected the object, determined its class, then went and called
+the `summary.data.frame` method. Correspondingly, with the object `model` of class linear model, the method for `summary.lm` was called.
+
+** Creating Objects
