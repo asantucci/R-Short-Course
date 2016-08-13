@@ -1,11 +1,11 @@
 ---
-title:  "R Basics"
+title:  "Basic Operations in R"
 author: "Andreas Santucci"
 output: html_document
 ---
 
-# Manipulation of Data
-R is a fancy calculator.
+# R as an extensible calculator
+We evaluate a couple elementary mathematical expressions.
 
 ```{r, results='hold'}
 2 * pi
@@ -27,19 +27,32 @@ head(letters)
 tail(LETTERS)
 ```
 
+Both of these are examples of *character-vectors*, i.e. a vector in which each element itself is a character-string.
+
 R makes it easy to work with dates.
 
 ```{r, results='hold'}
 x <- seq(from = as.Date('Jan 01, 2004', format = '%b %d, %Y'),
          to   = as.Date('2004-12-31'),
          by   = 'day')
-table(months(x))
 
+table(months(x))
 which(x == '2004-09-01')
 length(x)                  # Leap year!
 ```
 
-## Vectors
+Almost anything you can think to do is either built in as a basic operation
+into R, available as part of a package, or can be programmed yourself.
+
+```{r, results='hold'}
+Sys.Date()     # What day  is it?
+Sys.time()     # What time is it?
+
+as.Date('2016-12-31') - Sys.Date() # Number of days until New Years.
+```
+
+# Vectors
+
 The months and alphabets printed above are actually vectors.
 It is easy to create a vector of numbers in different ways. We present
 the `:` "through" operator, and the functions `c` and
@@ -53,7 +66,8 @@ seq(1, 10, by = 3) # A sequence of numbers, from 1 to 10, by 3's.
 
 ## Assignment Operator
 We've seen already that we may use the assignment operator `<-` in order to
-declare variables. Note that R is dynamically typed.
+declare variables. Note that R is dynamically typed, which means that variable
+names are not statically fixed to a particular type or class of object.
 
 ```{r, results='hold'}
 x <- sample(letters, size = 10)
@@ -65,38 +79,56 @@ x <- sample(1:10)
 y <- sample(0:1, size = length(x), replace = T)
 
 class(x)
-class(y)
 ```
 
-R let's user's easily create vectors of numbers. We may assign numbers and 
-vectors to variables.
-
-
-often, functions in base R are *vectorized*. That is, a function may be applied to an entire vector at once.
+## Vector Arithmetic
+Often, functions in base R are *vectorized*. That is, a function may be applied to an entire vector at once. Examples:
 
 ```{r, results='hold'}
-x <- seq(from = 0, to = 2*pi, by = 0.01)
-length(x)
-head(x)
-tail(x)
+sqrt(1:4)
+10^(1:4)
+1:4 + seq(0, pi, length.out = 4)
 ```
+
+## Recycling
+If an operator (such as `+`, `-`, or `^`) is applied to two vectors of different
+lengths, R implicitly performs recycling by repeating the shorter vector (possibly a partial fraction of times) until the length of the longer vector is reached.
+
+This means things can be recycled *evenly*...
+
+```{r, results='hold'}
+3   + 1:6   # The number '3' can be thought of as a vector of length one.
+1:2 + 1:6
+```
+
+... or not, in which case a *warning* is triggered.
 
 ```{r}
-plot(x, sin(x), type = 'l')
+1:3 * 1:5
 ```
 
+Note that a warning is *not* an error; this means that your code will continue to run.
 
-# Objects in R
-R is an *object-oriented* programming language. There are *classes* in R which
-support various types of *methods*. Every object has a class.
+# Booleans in R
+We may also use `TRUE` or `FALSE` (or `1` and `0`) as Boolean values. These may be used in (non)-obvious ways.
 
 ```{r}
-class(data)
-class(model)
+if (sample(month.abb[1:3], 1) == 'Jan') {
+    print("Lucky!")
+} else {
+    print("Unlucky!") 
+}
+
+if (1) print("Anything non-zero is true")
+if (0) print("Zeros are always evaluated as false")
+
+if (!FALSE) print("We can negate a logical using the ! operator")
 ```
 
-When we fed `data` (of type `data-frame`) to `summary`, the function first
-inspected the object, determined its class, then went and called
-the `summary.data.frame` method. Correspondingly, with the object `model` of class linear model, the method for `summary.lm` was called.
+Realize that we can also apply Boolean *arithmetic*
 
-** Creating Objects
+```{r, results='hold'}
+TRUE + FALSE
+mean(c(TRUE, TRUE, FALSE))
+```
+
