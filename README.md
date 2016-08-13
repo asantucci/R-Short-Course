@@ -2,13 +2,18 @@
 
 ## Topics
 *Place an 'x' in the box when you're done!*
-- [ ] **Basic R.** Andreas
-- [ ] **Apply functions in R.** Andreas
-- [ ] **Plotting in R.** Andreas for ggmap
-- [ ] **dplyr, data.table** Andreas
-- [ ] **Parallel R** Andreas
-- [ ] **Statistical applications in R** Lan
-- [x] **...** Lan
+Session 1: 9 - 10:30
+- [ ] **Basic R.**
+- [ ] **Apply functions in R.**
+
+Session 2: 10:45 - 12
+- [ ] **Plotting in R (`base` `ggplot2`, and `ggmap`**
+
+Session 3: 2 - 3:15
+- [ ] **dplyr, data.table, parallel R**
+
+Session 4: 3:30 - 4:45
+- [ ] **Statistical applications in R**
 
 ### For instructors, a quick reminder.
 "I want to make a new change to the file! What do I do?"
