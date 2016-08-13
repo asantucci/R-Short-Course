@@ -131,4 +131,69 @@ Realize that we can also apply Boolean *arithmetic*
 TRUE + FALSE
 mean(c(TRUE, TRUE, FALSE))
 ```
+# Matrices
+You've already seen vectors in R. Indexing matrices works the same way.
 
+```{r}
+m <- matrix(1:9, nrow = 3, byrow = T)
+m[1:2, 1:2]
+```
+
+Note that the entries in a matrix must be homogeneous. E.g., it is permissible
+to have a matrix of numbers (or of characters), but not a matrix consisting of
+some numbers and some characters.
+
+```{r}
+matrix(letters[1:9], nrow = 3)
+```
+
+# Lists
+Lists are the most important construct in R. A list is a collection of named
+(possibly heterogeneous) objects.
+
+```{r}
+myInfo <- list(first = "Andreas", last = "Santucci")
+
+myInfo
+```
+
+Individual elements may be accessed from (or added to) a list by using either
+the `$` *or* the `[[` operator. First we show the `$` operator for 
+list-extraction.
+
+```{r, results='hold'}
+myInfo$first
+myInfo$last
+```
+
+Now, we show the `[[` bracket operator in *two-different* ways; one way allows
+us to access elements of a list by *name*, the other by *position*.
+
+```{r, results='hold'}
+myInfo[['first']]
+myInfo[[1]]
+identical(myInfo[['last']], myInfo[[2]])
+```
+
+With a list, we can really store a lot of different information.
+
+```{r}
+myInfo$weightHistory <- seq(0, 180, 10)
+myInfo$Age <- 26
+myInfo$siblings <- c(brothers = 1, sisters = 1)
+
+myInfo
+```
+
+# Data-Frames
+A data-frame is actually just a list of vectors, each of the same length.
+```{r, results='hold'}
+n <- 6
+data <- data.frame(id = 1:n,
+                   weight = runif(n, min = 100, max = 200),
+                   birthm = sample(month.abb, size = n, replace = T))
+                   
+data[['id']]
+data$weight
+data[[ncol(data)]]
+```
