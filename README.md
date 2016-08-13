@@ -1,13 +1,12 @@
 # ICME Summer Short Course on R, 2016
 
 ## Topics
-*Place an 'x' in the box when you're done!*
 Session 1: 9 - 10:30
 - [ ] **Basic R.**
 - [ ] **Apply functions in R.**
 
 Session 2: 10:45 - 12
-- [ ] **Plotting in R (`base` `ggplot2`, and `ggmap`**
+- [ ] **Plotting in R (`base` `ggplot2`, and `ggmap`)**
 
 Session 3: 2 - 3:15
 - [ ] **dplyr, data.table, parallel R**
