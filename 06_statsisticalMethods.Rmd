@@ -1,0 +1,1425 @@
+---
+title: "Statistical Methods with R"
+output: html_notebook
+---
+
+# Relevant Books
+
+For more background in statistics check out the following books:
+
+* ["An introduction to Statistical Learning"](http://www-bcf.usc.edu/~gareth/ISL/getbook.html) [ESL] by James, Witten, Hastie and Tibshirani
+* ["Elements of statistical learning"](http://www.springer.com/gp/book/9780387848570) [ISL] by Hastie, Tibshirani and Friedman 
+* ["Introduction to Linear Regression Analysis"](http://www.wiley.com/WileyCDA/WileyTitle/productCd-0470542810.html) by Montgomery, Peck, Vinning
+
+All presented material is under a 
+[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).
+
+
+# Install and load packages
+
+```{r check-install-load-packages, warning=FALSE, message=FALSE}
+# Clear the workspace
+rm(list = ls())
+
+# List of package needed for this workshop
+reqpkg <- c("ggplot2","jpeg", "Rtsne", "randomForest", "MASS")
+
+# Check if the packages are installed:
+inpkg = installed.packages()[, "Package"] #installed packages
+neededpkg = reqpkg[!reqpkg %in% inpkg]
+if(length(neededpkg) > 0){
+  stop(paste("\n Need to install the following package:", neededpkg))
+}
+```
+
+If you haven't done that already, download the workshop materials:
+```{r eval = FALSE}
+url_to_class_materials <- "https://stanford.box.com/s/sqmpjdbuxa29a8fenm1cqxc0ri6c3276"
+# Change the path directory and uncomment the line below
+#setwd("/path/to/dir/")
+download.file("url_to_class_materials", "R_workshop.zip")
+unzip("R_workshop.zip")
+```
+
+
+# Statistical Modeling
+
+Why do you need a model? You would like to:
+
+* detect the pattern in the data
+* predict the outcome for new observations
+* assess the significance of some factors on the outcome of interest
+* perform statistical tests.
+
+In this workshop **you won't learn mathematical details** about how
+the methods present work or how to create a good statistically-sound model.
+I will just equip you with the knowledge of how to use some of the R packages 
+that implement the more popular statistical techniques, and how to interpret
+their outputs.
+
+You can check out other workshops e.f statistical learning or machine learning 
+to learn more on theory these methods are based on.
+
+To illustrate how statistical modelling works in R we will use the 
+`mtcars`, built-in dataset, that comes from a 1974 issue of Motor Trends 
+magazine. 
+
+```{r}
+data("mtcars")
+head(mtcars)
+```
+
+* each row of `mtcars` represents one model of car, indicated in the row-names. 
+* each column is one attribute of the car, such as the miles per gallon (or fuel efficiency), the number of cylinders, the displacement (or volume) of the 
+car's engine in cubic inches, whether the car has an automatic or manual 
+transmission.
+
+# Hypothesis testing
+
+One often asked question in data analysis is whether there is 
+a **significant difference** between two samples, or groups. For example, one 
+be interested in whether a group of patients subject to a medical treatment 
+had better outcomes than a control group. These kinds of **hypotheses** can be
+tested with statistical procedures.
+
+Here we will show how to perform **a Student's T-test**, which is one of the 
+methods statisticians traditionally use to test the equality of the means
+of two populations.
+
+## Hypothesis test: example
+
+Analyzing our example dataset we might be interested whether the fuel efficiency,
+i.e. mileage per gallon is different for the cars with automatic and manual 
+transmission. The example and the code in the following testing and
+and linear regression sections is adapted from the one found 
+[here](http://varianceexplained.org/RData/about/#licensing).
+
+First we can visualize the observations using the boxplot. Th data about
+the transmission is stored in the `am` column and on the fuel efficiency
+in the `mpg` column.
+
+```{r fig.width=5, fig.height=5}
+data("mtcars")
+mtcars$am <- factor(mtcars$am, levels = c(0, 1), 
+                    labels = c("automatic", "manual"))
+ggplot(mtcars, aes(x = am, y = mpg)) + geom_boxplot() +
+  xlab("Trasmission") + ylab("Fuel efficiency")
+```
+
+To test whether the mean mileage per gallon is different between the cars with 
+automatic and manual transmission, we can use the `t.test()` function:
+
+```{r}
+(tt <- t.test(mpg ~ am, data=mtcars))
+```
+
+Here the first argument is the `formula = mpg ~ am`. In R a tilde symbol,
+`~` means "explained by". That is we want to test the miles per
+gallon explained by the automatic transmission. The second argument is the
+dataset we choose, `mtcars`.
+
+We can extract the information computed for the t-test stored in the following
+elements of `tt`.
+
+```{r}
+names(tt)
+```
+
+We can extract the p-value, that is the probability that we would observe a
+more extreme difference in the sample means given that both samples come from
+the same population. In this case it means that if indeed the automatic 
+and manual transmission cars have equal average mileage per gallon rate, 
+then the probability that we would observe a greater or equal difference in 
+the sample mean `mtg` is equal to p-value.  
+
+```{r}
+tt$p.value
+```
+
+The 95% confidence interval for the difference between the two means is
+stored in:
+
+```{r}
+tt$conf.int
+```
+
+
+# Supervised Learning
+
+* *Supervised Learning* is a task of inferring the relationship between
+the input data and the response variable. 
+
+* In supervised learning each observation consist of a pair $(x, y)$ 
+where $x$ is the input data, e.g. a collection of the attributes, 
+and $y$ the label or the output value.
+
+* Supervised learning problems can be divided into classification 
+and regression tasks.
+
+    + **Regression**: $y$ is a *quantitative* variable (numerical/continuous/ordered)
+      e.g. mileage per gallon in the `mtcars` dataset
+    
+    + **Classification**: $y$ is a *qualitative* variable (categorical)   
+      e.g. transmission in the `mtcars` dataset
+
+# Regression
+
+
+## Linear Regression
+
+* **Linear regression** is a type of regression where the quantitative
+output variable is modeled as a **linear** function of the inputs. 
+
+* **Simple linear regression** predicts the output $y$ from a single predictor 
+$x$. That is we assume the outcome $y$ follows the following linear model, where
+$\epsilon$ is a random noise term with zero mean.
+
+$$y = \beta_0 + \beta_1 x + \epsilon$$
+
+* **Multiple linear regression** assumes $y$ relies on many covariates:
+
+$$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \dots + \beta_p x_p + \epsilon =
+\vec \beta \cdot \vec x + \epsilon$$
+
+Linear regression seeks a solution $\hat y = \hat \beta \cdot \vec x$ such
+that the difference between the true outcome $y$ and the prediction $\hat y$
+(the sum of the squared residuals) is minimized.
+
+$$arg \min\limits_{\hat \beta} \sum_i \left(y^{(i)} - \hat \beta x^{(i)}\right)^2$$
+
+### Simple Linear Regression
+
+Analyzing the example dataset `mtcars`, we can try to model the mileage per
+gallon using the weight of the car. That is we would like to use the weight
+of the car to predict the mpg. 
+
+In R the linear models can be fit using an `lm` function.
+
+```{r}
+fit <- lm(mpg ~ wt, mtcars)
+```
+
+Note that we use the same notation as for the `t.test` function. We can check 
+the details on the fitted model by calling:
+
+```{r}
+summary(fit)
+```
+
+The results are organized as follows:
+* `Call` -- the function call for the fitted model,
+* `Residuals` -- the residuals between the true mpg and the predicted values
+* `Coefficents` -- the fitted coefficients for the fitted model (the $\beta$'s 
+in the linear model formula). The values, the standard errors, the t-statistics
+as well as the p-values are shown. The stars in the last column mark the
+significance of each coefficient (more stars means more importance).
+* Other details on the performance of the model.
+
+Coefficients of the model can be extracted with:
+
+```{r}
+(co <-  coef(summary(fit)))
+```
+
+To predict the `mpg` for the existing observations (cars) you can call
+
+```{r}
+predict(fit)
+```
+
+To predict the `mpg` for the new observations, e.g. cars with specific
+weights, e.g. `wt = 3.14` we can use the computed coefficients:
+
+```{r}
+co[, 1]
+
+# beta0 + beta1 * wt
+co[1, 1] + co[2, 1]* 3.14 #  37.285126 +  (-5.344472) * 3.14
+```
+
+We can make predictions for a large number of new observations by creating 
+a data frame with new weights:
+
+```{r}
+newcars <- data.frame(wt = c(2, 2.1, 3.14, 4.1, 4.3))
+predict(fit, newcars)
+```
+
+Note that this produces the same prediction for `wt = 3.14` as we computed
+previously.
+
+We can plot the data and the fitted model using `ggplot2`. This can be
+done even without computing the model in the previous step.
+
+The `geom_smoother` with the `method` argument set equal to `"lm"` 
+does the computations automatically.
+
+```{r}
+ggplot(mtcars, aes(wt, mpg)) + geom_point() + geom_smooth(method="lm")
+```
+
+### Multiple Linear Regression
+
+More elaborate models involving more input variables can be fitted using 
+the same function `lm()`.
+
+For example we can be interested in predicting the `mpg` from 
+weight, displacement and the number of cylinders in the car.
+
+Look at the data:
+
+```{r}
+ggplot(mtcars, aes(x=wt, y=mpg, col=cyl, size=disp)) + geom_point()
+```
+
+
+
+```{r}
+mfit1 <- lm(mpg ~ wt + disp + cyl, data = mtcars)
+summary(mfit1)
+```
+
+The same commands as before can be applied to `summary(mfit1)` to extract the 
+information.
+
+To predict `mpg` for new values cars first create a data frame of new
+inputs per car:
+
+```{r}
+newcars <- data.frame(wt = c(2, 2.1, 3.14, 4.1, 4.3),
+                      disp = c(100, 200, 500,300, 210),
+                      cyl = c(6,6,4,6,8))
+predict(mfit1, newcars)
+```
+
+Models with **interaction effects** can be specified with *:
+```{r}
+mfit2 <- lm(mpg ~ am * wt, mtcars)
+summary(mfit2)
+```
+
+
+## Lasso Regression
+
+Nowadays, working with real datasets we can encounter a problem of having "too"
+many variables. One example of such a problem is prediction the risk of a 
+disease based on the single nucleotide polymorphisms (SNPs) data. 
+In this case the number of predictions can be much larger than than the
+number of observations. Lasso regression is especially useful for problems,
+where **the number of available covariates is extremely large, but
+only a handful of them are relevant for the prediction of the outcome**.
+
+Lasso is simply regression with $L_1$ penalty. That is we are interested in 
+finding a solution to the following problem:
+
+$$arg \min\limits_{\hat \beta} \sum_i \left(y^{(i)} 
+- \hat \beta x^{(i)}\right)^2 + \lambda \|\hat \beta\|_1$$
+
+It turns out that the $L_1$ norm $\|\vec x\|_1 = \sum_j |x_j|$ promotes
+sparsity which means that the solutions found will usually have only 
+a small number of non-zero coefficients. The number of non-zero coefficients
+depends on the choice of the tuning parameter, $\lambda$. The higher the
+$\lambda$ the fewer non-zero coefficients.
+
+Lasso regression is implemented in an R package `glmnet`. An introductory
+tutorial to the package can be found 
+[here](https://web.stanford.edu/~hastie/glmnet/glmnet_alpha.html).
+
+### Lasso Example
+
+We again use the `mtcars` datasets for the following example. 
+Now we will build a model predicting the `mpg` using the Lasso regression. 
+We supply all the available covariates and let the algorithm figure out
+fit
+
+```{r}
+library(glmnet)
+head(mtcars)
+
+y <- mtcars[, 1] # mileage per gallon 
+x <- mtcars[, -1] # all other variables treated as predictors
+x <- data.matrix(x, "matrix")
+
+set.seed(123)
+trainIdx <- sample(1:nrow(mtcars), round(0.7 * nrow(mtcars)))
+
+fit <- glmnet(x[trainIdx, ], y[trainIdx])
+```
+
+
+
+```{r}
+print(fit)
+```
+
+* `glmnet()` compute the Lasso regression for a sequence of different tuning
+parameters. 
+* Thus, each of the rows of the table above corresponds to a particular
+$\lambda$ in the sequence.
+
+In the above table column `Df` denotes the number of non-zero coefficients
+(degrees of freedom), `%Dev` is the percentage variance explained, and
+`Lambda` is the value of the currently chosen tuning parameter. 
+
+```{r fig.height=5, fig.width=7}
+plot(fit, label = TRUE) 
+# label = TRUE makes the plot annotate the curves with the corresponding coeffients labels.
+```
+
+* each of the curves above corresponds to a variable. It shows that path of a
+specific coefficient as the value of the tuning parameter changes, and the $L_1$ 
+norm of the whole coefficient vector increases. 
+* the tuning parameter decreases from left to right, that is with a small 
+$\lambda$ (right) we have more non-zero coefficients.
+* the y-axis corresponds the value of the coefficient.
+* the x-axis is related to the $L_1$ norm as noted, but is scaled to indicate
+the number of non-zero coefficients for the current choice of $\lambda$, which
+is equal to the effective degrees of freedom (df) for the Lasso.
+
+The computed Lasso coefficient for a particular choice of $\lambda$ can be
+printed using:
+
+```{r}
+coef(fit, s = 1)
+```
+
+
+Similarly to the case with `lm()`, we can use the function `predict()` to 
+predict the outcome from the existing or new input data. We have to however
+specify the choice of the tuning parameter by setting the value of the 
+argument `s`.
+
+
+```{r}
+predict(fit, newx = x[-trainIdx, ], s = c(0.5, 1.5, 2))
+```
+
+Each of the columns corresponds to corresponding choice of $\lambda$.
+
+The choice of $\lambda$ can be made using 
+[cross-validation](https://en.wikipedia.org/wiki/Cross-validation_(statistics)).
+We can us the function `cv.glmnet()` to perform a k-fold cross validation.
+
+> In k-fold cross-validation, the original sample is randomly partitioned into 
+k equal sized subsamples. Of the k subsamples, a single subsample is retained 
+as the validation data for testing the model, and the remaining k − 1 
+subsamples are used as training data.^[https://en.wikipedia.org/wiki/Cross-validation_(statistics)#k-fold_cross-validation]
+
+
+```{r}
+set.seed(1)
+cvfit <- cv.glmnet(x[trainIdx, ], y[trainIdx], nfolds = 5)
+```
+
+`nfolds` argument sets the number of folds (k).
+
+```{r}
+plot(cvfit)
+```
+
+The above plot shows the average MSE (red dots) over the folds, together
+with the standard deviation bounds (error bars) for
+the $\lambda$ sequence. The two chosen $\lambda$ values are indicated with 
+dotted black lines.
+
+The first one:
+```{r}
+cvfit$lambda.min
+```
+
+is the value of $\lambda$ that gives a minimum mean cross-validated error,
+and the second:
+
+```{r}
+cvfit$lambda.1se
+```
+
+gives the biggest $\lambda$ such that the MSE is within one standard error 
+of the minimum error.
+
+
+# Exercise I
+
+In this exercise you will perform Lasso regression yourself.
+We will use the `Boston` dataset from the `MASS` package.
+The dataset contains information on the Boston suburbs 
+housing market collected by David Harrison in 1978.
+
+We will try to predict the median value of of homes in the region based on 
+its attributes recorded in other variables.
+
+```{r}
+library(MASS)
+?Boston
+head(Boston)
+dim(Boston)
+```
+
+```{r}
+set.seed(123)
+trainIdx <- sample(1:nrow(Boston), round(0.7 * nrow(Boston)))
+boston.test <- Boston[-trainIdx,"medv"]
+```
+
+Perform a Lasso regression with `glmnet`. Steps:
+
+1. Extract the input and output data from the `Boston` `data.frame` and convert
+them if necessary to a correct format.
+2. Use cross-validation to select the value for $\lambda$.
+3. Inspect the coefficients computed.
+4. Compute the predictions for the test dataset. Evaluate the MSE.
+
+
+```{r}
+# (... ?)
+```
+
+
+# Classification
+
+* As mentioned before unlike regression, classification deals with prediction 
+outcomes or response variables that are qualitative, or categorical.
+
+* The task is to **classify** or assign each observation to a category or a class.
+
+* Examples of classification problems include:
+    + predicting what medical condition or disease a patient has base on their
+    symptoms,
+    + determining cell types based on their gene expression profiles
+    (single cell RNA-seq data).
+    + detecting fraudulent transactions based on the transaction history
+
+## Logistic Regression
+
+* Despite its name, *logistic regression* is used for classification problems.
+
+* It performs binary classification (only two categories),
+
+* The name *regression* is due to the fact that we are still fitting 
+a function to the data. However, in this case, we are interested
+in the relationship between the input and the **probability** that 
+the output is in one of the two classes and not the class assigmnent itself. 
+This function used to model the relationship is called a **logit function**:
+
+$$P[y = 1 | x] = {\exp^{\beta_0 + \beta_1 x} \over 1 + \exp^{\beta_0 + \beta_1 x}}$$
+
+![](./figures/logit.png)
+
+## Logistic Regression Example
+
+We go back to the `mtcars` dataset.
+
+```{r}
+head(mtcars)
+```
+
+Using logistic regression we will try to predict whether a car had manial or 
+automatic transmission base on its other characteristics.
+
+In R the function `glm()` can be used to perform logistic regression
+(as well as mamy other generalized linear models which you can look up
+by calling `?glm`)
+
+Note that currently the column `am` in `mtcars` is a numerical variable.
+However, its values are only 0 or 1 denoting automatic or manual transmission
+respectively.
+```{r}
+class(mtcars$am)
+table(mtcars$am)
+```
+
+We need to convert that column to a factor format, so that R knows the `am`
+variable is a categorical one:
+
+```{r}
+mtcars$am <- factor(mtcars$am)
+```
+
+
+Then we fit the logistic regression predicating the transmission of the car
+from its mileage per hour (`mpg`) and the gross horesepower (`hp`)
+with the following function call:
+
+```{r}
+fit.logit <- glm(am ~ mpg + hp, data = mtcars, family = "binomial") 
+```
+
+Note that the formula `am ~ .` means we are interested in explaining `~` the
+variable `am` with `mpg` and `hp`.
+You need to set the family to `family = "binomial"` to indicate you would
+like to perform a logistic regression. More on this `family` parameter, which
+describes the error distribution and the link function can be 
+found by calling `?family`. 
+
+The model summary can be printed with:
+
+```{r}
+summary(fit.logit)
+```
+
+As we see the output is simmilar to the one for the linear model, including
+the function call, information on residuals, coefficient matrix etc.
+
+Predictions can be computed again using `predict()` function, with the argument
+`type = "response"`.
+
+```{r}
+(newcars <- data.frame(mpg = mean(mtcars$mpg),
+                      hp = c(110, 170, 155)))
+```
+
+```{r}
+predict(fit.logit, newdata = newcars, type = "response")
+```
+
+In the above the output this the probability of a new car with specified
+mpg and hp to have a manual transmission (wich corresponds to value
+of 1 in the factor `mtcars$am`). Classification can be done by
+assigning "manual" to all the cars with the probability > 0.5, and "automatic"
+to the rest.
+
+More on logistic regression in R can be found [here](http://www.ats.ucla.edu/stat/r/dae/logit.htm)
+
+
+## Suport Vector Machines (SVM)
+
+* The following videos contati a brief explanation of the principle of the SVMs:
+  + [video](https://www.youtube.com/watch?v=5zRmhOUjjGY)
+  + [lectures](https://www.youtube.com/watch?v=wfKGEzw0tSc&list=PLpWvmddrSwiHIyxJq0hw_9b8w2j_sWOVe) by Andrew Ng
+
+
+![](./figures/SVM_optimize.png)
+
+### Support Vectors
+
+![](./figures/support_vecs.png)
+
+### Kernel SVM
+
+![](./figures/Kernel_Machine.png)
+
+## SVM Example
+
+We will do a simple example from the ISL computing SVM on a simulated data:
+
+```{r}
+set.seed(1)
+x <- matrix(rnorm(20*2), ncol=2)
+y <- c(rep(-1,10), rep(1,10))
+x[y == 1,] <- x[y == 1, ] + 1
+plot(x, col=(3-y))
+dat <- data.frame(x = x, y=as.factor(y))
+head(dat)
+```
+
+```{r}
+library(e1071)
+svmfit <- svm(y ~ ., data=dat, kernel="linear", cost=10, scale=FALSE)
+plot(svmfit, dat)
+```
+
+
+```{r}
+svmfit$index
+summary(svmfit)
+```
+
+```{r}
+svmfit <- svm(y~., data=dat, kernel="linear", cost=0.1,scale=FALSE)
+plot(svmfit, dat)
+svmfit$index
+set.seed(1)
+```
+
+To find a best choice of the tuning parameter "C" use the `tune()` function
+
+```{r}
+set.seed(1)
+tune.out <- tune(svm,y ~ ., data=dat, kernel="linear",
+                 ranges=list(cost=c(0.001, 0.01, 0.1, 1,5,10,100)))
+summary(tune.out)
+```
+
+```{r}
+bestmod <- tune.out$best.model
+summary(bestmod)
+```
+We build a new test dataset from a similar model as we did for the train data.
+
+```{r}
+xtest <- matrix(rnorm(20*2), ncol=2)
+ytest <- sample(c(-1,1), 20, rep=TRUE)
+xtest[ytest==1, ] <- xtest[ytest == 1,] + 1
+testdat <- data.frame(x=xtest, y=as.factor(ytest))
+plot(xtest, col=(3-ytest))
+```
+
+```{r}
+ypred <- predict(bestmod, testdat)
+table(predict = ypred, truth = testdat$y)
+```
+
+And for the non-tuned model we have:
+
+```{r}
+svmfit <- svm(y~., data=dat, kernel = "linear", cost=.01, scale = FALSE)
+ypred <- predict(svmfit, testdat)
+table(predict = ypred, truth = testdat$y)
+```
+
+
+### Kernel SVM
+
+Now suppose we have non-linearly separable data:
+
+```{r}
+set.seed(123)
+# Generate 200 points
+x <- matrix(rnorm(200*2), ncol=2)
+x[1:100,] <- x[1:100,]+2
+x[101:150,] <- x[101:150,]-2
+y <-  c(rep(1,150), rep(2,50))
+dat <- data.frame(x = x, y = as.factor(y))
+plot(x, col=y)
+
+# Let a random half be a training set
+train <- sample(200, 100)
+```
+We will use the SVM with **a radial kernel**. Note that here we can additionally 
+specify the `gamma` parameter for the radial function:
+
+```{r}
+svmfit <- svm(y~., data=dat[train,], kernel = "radial",  gamma=1, cost=1)
+plot(svmfit, dat[train,])
+```
+
+```{r}
+summary(svmfit)
+table(true <- dat[-train,"y"], pred=predict(svmfit, newx = dat[-train,]))
+```
+
+
+We can tune both `gamma` and `cost` parameters:
+
+```{r}
+set.seed(17)
+tune.out <- tune(svm, y~., data=dat[train,], kernel="radial", 
+              ranges=list(cost=c(0.1,1,10,100,1000), gamma=c(0.5,1,2,3,4)))
+summary(tune.out)
+```
+
+```{r}
+table(true <- dat[-train,"y"], pred=predict(tune.out$best.model,newx=dat[-train,]))
+```
+
+```{r}
+plot(tune.out$best.model, dat[train,])
+```
+
+
+# Random Forest
+
+* An ensemble learning method based on CART (classification and regression trees) 
+proposed by [Breinman](http://link.springer.com/article/10.1023/A:1010933404324) 
+in 2001.
+* Can be used to perform **classification AND regression**
+* A good write-up is available on how RF work
+[here](http://www.bios.unc.edu/~dzeng/BIOS740/randomforest.pdf)
+
+
+## Decision trees
+
+Decision tree on classification of Titanic Survivors:
+
+![](./figures/CART_tree_titanic_survivors.png)
+
+Source: [wiki](https://en.wikipedia.org/wiki/Decision_tree_learning)
+
+## Ensamble Methods
+
+![ESL](./figures/ensembleTrees.png)
+
+![](./figures/randomForest.jpg)
+
+Source: [link](http://www.slideshare.net/satnam74/india-software-developers-conference-2013-bangalore)
+
+* Averaging over a collection of decision trees makes the predictions
+more stable. 
+
+* One of the random forest features which makes it perform
+well, is **the introduction of randomness into the candidate splitting variables**,
+which reduces correlation between the generated trees. 
+
+* What this means is that, at each splitting levels, the pool of the potential
+splitting variables does not contain all variables, but only a random subset of them.
+
+
+In R random forest can be computed with the function `randomForest()` in 
+`randomForest` package. There are two important parameters for
+a random forest prediction:
+
+* `mtry` -- Number of variables randomly sampled as candidates at each split. 
+* `ntree`-- Number of trees generated (to be averaged over). 
+
+![](./figures/rfparams.png)
+
+We will use the `iris` dataset to show how classification can be done
+with `randomForest()`. Regression can be done using the same function calls.
+
+> **Iris** is a famous (Fisher's or Anderson's) data set gives the measurements 
+in centimeters of the variables sepal length and width and petal length and 
+width, respectively, for 50 flowers from each of 3 species of iris. 
+The species are Iris setosa, versicolor, and virginica.
+
+```{r}
+## Classification:
+data(iris)
+
+# set seed for reproducibility since random forest is a random predictor 
+set.seed(71) 
+iris.rf <- randomForest(Species ~ ., data=iris, importance=TRUE,
+                        proximity=TRUE)
+print(iris.rf)
+```
+
+```{r}
+## Look at variable importance:
+round(importance(iris.rf), 2)
+```
+
+
+# Exercise II
+
+Using random forest regression, predict the housing prices in the `Boston` 
+dataset used previously for the exercise on the Lasso regression.
+
+1. First the random forest model with default parameters
+2. Compute the MSE for the model and compare with the one from Lasso regression. 
+3. Plot the predicted values and the true median house values for the test data.
+4. Plot and inspect the variable importance. Do they agree with the coefficients
+found in Lasso regression?
+
+```{r}
+data(Boston)
+set.seed(123)
+trainIdx <- sample(1:nrow(Boston), round(0.7 * nrow(Boston)))
+head(Boston)
+```
+
+```{r}
+# (...?)
+```
+
+
+# Dimensional Reduction
+
+* Today most of the datasets are high-dimensional, 
+  e.g. genetic sequencing data with thousands of genes and hundreds of rows,
+  medical records data, user internet activity data etc.
+* Dimensional reduction or feature extraction reduces the number of 
+variables under consideration.
+* This process is useful for:
+    + data compression
+    + removing noise and redundant features
+    + increases the accuracy of of data analysis methods by avoiding over-fitting
+* Common methods for dimensionality reduction include:
+    + principal component analysis (PCA), 
+    + independent component analysis (ICA), 
+    + linear and nonlinear multidimensional scaling (MDS)
+    + and many others
+
+## Principal Component Analysis (PCA)
+
+An example from ESL Chapter 14:
+
+![](./figures/halfSphere.png)
+![](./figures/pca.png)
+
+## PCA Example: US crime rates
+
+Now we will do an example using the built in dataset on violent crime rates
+in the US from 1975.
+
+The code is adapted from ISL.
+
+```{r}
+?USArrests
+head(USArrests)
+states <- row.names(USArrests)
+```
+
+Mean and variance of the crime rates across all states:
+```{r}
+apply(USArrests, 2, mean)
+apply(USArrests, 2, var)
+```
+
+Compute a PCA:
+
+In R you can use the function `prcomp()` to do PCA. Check the help page
+`?prcomp` for details.
+
+> The calculation is done by a singular value decomposition of the 
+(centered and possibly scaled) data matrix, not by using eigen on 
+the covariance matrix. This is generally the preferred method for numerical 
+accuracy. The print method for these objects prints the results in a nice 
+format and the plot method produces a scree plot.
+
+`prcomp()` is a preferred method over `princomp`.
+
+```{r}
+pr.out <- prcomp(USArrests, scale=TRUE)
+names(pr.out)
+pr.out$center
+pr.out$scale
+pr.out$rotation
+dim(pr.out$x)
+```
+
+The output of `prcomp()` is a list containing the following:
+
+* `sdev`:	the standard deviations of the principal components 
+(i.e., the square roots of the eigenvalues of the co-variance/correlation matrix,
+X^TX)
+* `rotation`:	the matrix of variable loadings (i.e., a matrix whose columns 
+contain the eigenvectors). 
+* `x`: the value of the rotated data (the centered (and scaled if requested) 
+data multiplied by the rotation matrix) is returned. 
+* `center, scale`	the centering and scaling used, or FALSE
+
+
+**Each principal component loading and score vector is unique, up to a sign flip**
+
+```{r fig.height=5}
+biplot(pr.out, scale=0, cex = 0.8)
+```
+**Each principal component loading and score vector is unique, up to a sign flip**
+So another software of R package could e.g. return this plot instead:
+
+```{r fig.height=5}
+pr.out$rotation=-pr.out$rotation
+pr.out$x=-pr.out$x
+biplot(pr.out, scale=0, cex = 0.8)
+```
+
+* the first loading vector places approx. equal weight on `Assault`, `Murder`, 
+and `Rape`, with much less weight on `UrbanPop`. Hence this component roughly 
+corresponds to a measure of overall rates of serious crimes. 
+* The second loading vector places most of its weight on `UrbanPop`. Hence, it
+roughly corresponds to the level of urbanization of the state.
+* The crime-related variables are located close to each other, and that 
+`UrbanPop` is far from them. 
+* The crime-related variables are correlated with each other, and that 
+the `UrbanPop` variable is less correlated with the other three.
+
+
+## A scree plot
+
+**Choose the smallest number of principal components that are required in order to explain a sizable amount of the variation in the data.**
+
+Look for a point at which the proportion of variance explained by each
+subsequent principal component drops off. This is often referred to as an
+*elbow* in the scree plot
+
+```{r}
+pr.out$sdev
+pr.var <- pr.out$sdev^2
+pr.var
+pve <- pr.var/sum(pr.var)
+pve
+plot(pve, xlab="Principal Component", ylab="Proportion of Variance Explained", ylim=c(0,1),type='b')
+```
+
+
+## Multidimensional Scaling (MDS)
+
+> MDS algorithm aims to place each object in N-dimensional space such that 
+the between-object distances are preserved as well as possible. Each object 
+is then assigned coordinates in each of the N dimensions. The number 
+of dimensions of an MDS plot N can exceed 2 and is specified a priori. 
+Choosing N=2 optimizes the object locations for a two-dimensional scatterplot.
+
+There are different types of MDS methods including, *Classical MDS*,
+*Metric MDS* and *Non-metric MDS*. The details on the differences
+ca be found on:
+
+* [Wiki](https://en.wikipedia.org/wiki/Multidimensional_scaling) page on Multidimensional Scaling.
+* [Applied Multidimensional Scaling](http://www.springer.com/us/book/9783642318474)
+book by Borg, Groenen, and Mair (Chapter 8) 
+
+## MDS Example: Color perception
+
+Ekman studied how people perceive colors. He collected data where 31 subjects
+rated the similarity pf each pair of 14 colors on a a 5-point scale 
+(0 = no similarity, 4 = identical). After averaging the 21 similarities
+ratings were divided by 4 to transform them into a unit interval.
+The 14 colors studied had wavelengths between 434 and 674 nm.
+
+```{r}
+ekmanSim <- readRDS("./data/ekman.rds")
+# convert similarities to dissimilarities
+ekmanDist <- 1- ekmanSim
+wavelengths <- round(seq( 434, 674, length.out = 14))
+```
+
+Use `cmdscale()` built-in function for classical MDS. 
+Metric iterative MDS and non-metric MDS function are available in a
+package `smacof` and other packages are also compared 
+[here](http://gastonsanchez.com/how-to/2013/01/23/MDS-in-R/).
+
+```{r}
+ekmanMDS <- cmdscale(ekmanDist, k = 2)
+```
+
+```{r fig.height=5, fig.width=5.5}
+res <- data.frame(ekmanMDS)
+res$wavelength <- factor(wavelengths, levels = wavelengths)
+ggplot(res, aes(X1, X2)) + geom_point() + theme_bw() +
+  geom_text(aes(label = wavelength), hjust=0.5, vjust=-1, size = 3)
+```
+
+I mapped the wavelengths to hexadecimal colors using this 
+[website](https://academo.org/demos/wavelength-to-colour-relationship/). 
+```{r}
+colorsDF <- data.frame(
+  wavelength = wavelengths,
+  hex = c("#2800ff", "#0051ff", "#00aeff", "#00fbff", "#00ff28", "#4eff00",
+          "#92ff00", "#ccff00", "#fff900", "#ffbe00", "#ff7b00", "#ff3000",
+          "#ff0000", "#ff0000"))
+ggplot(res, aes(X1, X2)) + 
+  geom_point(aes(color = wavelength), size = 2) + theme_bw() +
+  geom_text(aes(label = wavelength), hjust=0.5, vjust=-1, size = 3) +
+  scale_color_manual(values = as.character(colorsDF$hex))
+```
+
+**MDS reproduces the recognizable 2D color wheel**
+
+## t-Distributed Stochastic Neighbor Embedding (tSNE)
+
+What is **tSNE**?
+
+* *a technique for dimensionality reduction that is particularly well suited for the visualization of high-dimensional datasets.*^[https://lvdmaaten.github.io/tsne/] 
+* the method was first introduced by L.J.P. van der Maaten in 2008. The original 
+paper is available [here](https://lvdmaaten.github.io/publications/papers/JMLR_2008.pdf)
+* t-SNE tries to group local data points closer to each other, instead of
+trying to preserve the global structure like many dimensionality reduction 
+techniques.
+
+## tSNE Example: Mass cytometry
+
+The following example shows how to calculate and plot a 2D t-SNE projection
+using the Barnes-Hut-SNE algorithm, using the `Rtsne` package for R. This
+example was worked out by [Lukas Weber](https://github.com/lmweber/Rtsne-example).
+
+* The dataset used is the mass cytometry of healthy human bone marrow data set 
+"Marrow1", seen in Figure 1b of [Amir et al. (2013)]( http://www.ncbi.nlm.nih.gov/pubmed/23685480). 
+* Mass cytometry is a recent advance in flow cytometry, which allows expression 
+levels of up to 40 proteins per cell to be measured in hundreds of cells per second.^[https://github.com/lmweber/Rtsne-example] 
+* This dataset provides an example of an ideal t-SNE projection, where cells 
+from different cell populations (types) are grouped as distinct clusters of 
+points in the 2-dimensional projection, and there is clear visual separation 
+between clusters.
+
+Source code: [github link](https://github.com/lmweber/Rtsne-example/blob/master/Rtsne_viSNE_example_Marrow1.R#L46)
+
+```{r eval = FALSE, echo = FALSE}
+# dat <- read.csv("./data/healthyHumanBoneMarrow.csv")
+# dat[1:10, 1:6]
+# dim(dat)
+# 
+# # subsampling
+# nsub <- 1000
+# set.seed(123)  # set random seed
+# dat <- dat[sample(1:nrow(dat), nsub), ]
+# dim(dat)
+```
+
+```{r}
+# Skip the block above if it takes too long to load.
+# The subsetted data has beed porvided in a smaller file
+dat <- read.csv("./data/healthyHumanBoneMarrow_small.csv")
+dim(dat)
+dat[1:10, 1:6]
+```
+
+
+
+```{r}
+# select 13 protein markers to use in calculation of t-SNE projection
+# CD11b, CD123, CD19, CD20, CD3, CD33, CD34, CD38, CD4, CD45, CD45RA, CD8, CD90
+# (see Amir et al. 2013, Supplementary Tables 1 and 2)
+
+colnames_proj <- colnames(dat)[c(11, 23, 10, 16, 7, 22, 14, 28, 12, 6, 8, 13, 30)]
+colnames_proj  # check carefully!
+```
+
+```{r}
+# arcsinh transformation
+# (see Amir et al. 2013, Online Methods, "Processing of mass cytometry data")
+asinh_scale <- 5
+dat <- asinh(dat / asinh_scale)  # transforms all columns! including event number etc
+
+# prepare data for Rtsne
+dat <- dat[, colnames_proj]      # select columns to use
+dat <- dat[!duplicated(dat), ]  # remove rows containing duplicate values within rounding
+dim(dat)
+```
+
+```{r}
+library(Rtsne)
+# run Rtsne (Barnes-Hut-SNE algorithm)
+# without PCA step (see Amir et al. 2013, Online Methods, "viSNE analysis")
+set.seed(123)  # set random seed
+rtsne_out <- Rtsne(as.matrix(dat), pca = FALSE, verbose = TRUE)
+```
+
+```{r}
+# plot 2D t-SNE projection
+plot(rtsne_out$Y, asp = 1, pch = 20, col = "blue", 
+     cex = 0.75, cex.axis = 1.25, cex.lab = 1.25, cex.main = 1.5, 
+     xlab = "t-SNE dimension 1", ylab = "t-SNE dimension 2", 
+     main = "2D t-SNE projection")
+```
+
+
+
+# Exercise III
+
+Download MNIST data of the digits images from the [Kaggle competition](https://www.kaggle.com/c/digit-recognizer).
+The code is adapted from the one [here](https://www.kaggle.com/gospursgo/digit-recognizer/clusters-in-2d-with-tsne-vs-pca/code). 
+
+The `./data/train.csv` and `./data/test.csv` files are data on the 28x28 pixel
+images of digits (0-9). The data is composed of:
+
+* `label` column denoting the digit on the image
+* `pixel0` through `pixel783` contain information on the pixel intensity
+(on the scale of 0-255), and together form the vectorized version of 
+the 28x28 pixel digit image
+
+![](./figures/mnistExamples.png)
+
+```{r eval = FALSE, echo = FALSE}
+# # The competition datafiles are in the directory ../input
+# # Read competition data files:
+# train <- read.csv("./data/train.csv")
+# test <- read.csv("./data/test.csv")
+# train$label <- as.factor(train$label)
+# 
+# # shrinking the size for the time limit
+# numTrain <- 1000
+# set.seed(1234)
+# rows <- sample(1:nrow(train), numTrain)
+# train <- train[rows,]
+# write.csv(train, "./data/train_small.csv")
+```
+
+```{r}
+# Skip the previous block and load the already subsetted training data (faster).
+train <- read.csv("./data/train_small.csv")
+dim(train)
+```
+
+
+1. Compute tSNE embedding of the training data.
+2. Visualized the tSNE 2D projection with the digit labels and coloring.
+3. Perform a principal component analysis on the training data.
+4. Plot the sample the PCA scores with the digit labels and coloring.
+
+```{r}
+# (... ?)
+```
+
+
+**What do you observe? How does tSNE compare with PCA in this case?**
+
+
+# Cluster Analysis
+
+* **Clustering** is an exploratory technique which enables us to find hidden 
+groups that can be important in interpreting the data.
+* Groupings are determined from the data itself, without any prior knowledge
+about observations labels or classification.
+
+![](./figures/clusters.png)
+
+* To cluster the data we need a **measure of similarity** or
+**dissimilarity** between a pair of observations, e.g.  an Euclidean distance.
+
+![](./figures/birdsOfFeather.png)
+
+Check out clustering methods available on 
+[CRAN](https://cran.r-project.org/web/views/Cluster.html).
+
+## k-means
+
+* k-means is a simple *iterative relocation method* for clustering data 
+into $k$ distinct non-overlapping groups. 
+* The algorithm minimizes the variation within each cluster.
+
+Demonstration of how k-means clustering works can be found in this
+[animation](http://shabal.in/visuals/kmeans/2.html)
+
+Drawbacks:
+
+* The number clusters $k$ must be specified before clustering.
+* Each time the algorithm is run, the centers of the clusters are
+randomly initialized leading to different final cluster assignments.
+
+The choice of the number of clusters, $k$ can be made by considering
+statistics such as:
+
+* Gap Statistic [link](http://www.web.stanford.edu/~hastie/Papers/gap.pdf)
+* Silhouette statistic [link](https://en.wikipedia.org/wiki/Silhouette_(clustering))
+* Calinski-Harbasz index [link](http://www.biomedcentral.com/content/supplementary/1477-5956-9-30-S4.PDF)
+
+
+## k-means for image segmentation/compression
+
+One of the application of k-means clustering is **image segmentation**.
+The code provided are adapted from the found 
+[here](https://www.r-bloggers.com/r-k-means-clustering-on-an-image/).
+
+
+### Download and read the image
+
+Download your favorite image / do a quick Google search for one / use the one 
+provided. Make sure that your picture is not too big (e.g. around is fine
+400 x 600 px). Otherwise, the code might take a while to run.
+
+The image provided is a picture of colorful tulips in the Netherlands
+downloaded from [here](http://www.infohostels.com/immagini/news/2179.jpg).
+
+
+```{r}
+library(jpeg)
+url <- "http://www.infohostels.com/immagini/news/2179.jpg"
+
+# Download the file and save it as "Image.jpg" in the directory
+dFile <- download.file(url, "./figures/Image.jpg")
+img <- readJPEG("./figures/Image.jpg") # Read the image
+(imgDm <- dim(img))
+```
+
+### Vectorize the data into RGB channels
+
+Represent the 3D array as a data frame with each row representing a single
+pixel. The columns x and y give the pixel location, and R, G, B denote
+the pixel intensity in red, green, blue respectively.
+
+```{r}
+# Assign RGB channels to data frame
+imgRGB <- data.frame(
+  x = rep(1:imgDm[2], each = imgDm[1]),
+  y = rep(imgDm[1]:1, imgDm[2]),
+  R = as.vector(img[,,1]),
+  G = as.vector(img[,,2]),
+  B = as.vector(img[,,3])
+  )
+```
+
+### Plot the image
+
+```{r}
+# ggplot theme to be used
+plotTheme <- function() {
+  theme(
+    panel.background = element_rect(
+      size = 3,
+      colour = "black",
+      fill = "white"),
+    axis.ticks = element_line(
+      size = 2),
+    panel.grid.major = element_line(
+      colour = "gray80",
+      linetype = "dotted"),
+    panel.grid.minor = element_line(
+      colour = "gray90",
+      linetype = "dashed"),
+    axis.title.x = element_text(
+      size = rel(1.2),
+      face = "bold"),
+    axis.title.y = element_text(
+      size = rel(1.2),
+      face = "bold"),
+    plot.title = element_text(
+      size = 20,
+      face = "bold",
+      vjust = 1.5)
+  )
+}
+```
+
+```{r}
+# Plot the image
+ggplot(data = imgRGB, aes(x = x, y = y)) + 
+  geom_point(colour = rgb(imgRGB[c("R", "G", "B")])) +
+  labs(title = "Original Image: Colorful Flowers") +
+  xlab("x") +
+  ylab("y") +
+  plotTheme()
+```
+
+
+### k-means in R
+
+Choose the number of clusters (colors in this case) and do k-means clustering 
+with `kmeans()` built-in function.
+
+```{r}
+kClusters <- 2
+kMeans <- kmeans(imgRGB[, c("R", "G", "B")], centers = kClusters)
+kColours <- rgb(kMeans$centers[kMeans$cluster,])
+```
+
+Then plot the results.
+
+```{r}
+ggplot(data = imgRGB, aes(x = x, y = y)) + 
+  geom_point(colour = kColours) +
+  labs(title = paste("k-Means Clustering of", kClusters, "Colours")) +
+  xlab("x") +
+  ylab("y") + 
+  plotTheme()
+```
+
+```{r}
+kClusters <- 6
+kMeans <- kmeans(imgRGB[, c("R", "G", "B")], centers = kClusters)
+names(kMeans)
+kColours <- rgb(kMeans$centers[kMeans$cluster,])
+```
+
+Then plot the results.
+
+```{r}
+ggplot(data = imgRGB, aes(x = x, y = y)) + 
+  geom_point(colour = kColours) +
+  labs(title = paste("k-Means Clustering of", kClusters, "Colours")) +
+  xlab("x") +
+  ylab("y") + 
+  plotTheme()
+```
+
+## Hierarchical clustering
+
+![Alexander Calder's mobile](./figures/calderMobile.jpg)
+
+If you don't want to specify or if it is hard to choose the number of clusters
+based on the diagnostics you can try **hierarchical clustering**, which
+provides a graphical tree-based representation of the data, called 
+a **dendogram**,  that would allow you to evaluate where the
+cutoff for grouping should occur.
+
+The hierarchical clustering algorithm summary is given below
+
+![](./figures/hierarchicalClusteringAlgorithm.png)
+
+Source: ISL
+
+The results for hierarchical clustering will differ based on your choice of:
+
+* the distance measure between a pair of observations:
+    + Euclidean,
+    + Manhattan,
+    + Jaccard
+    + etc. [link](http://dataaspirant.com/2015/04/11/five-most-popular-similarity-measures-implementation-in-python/)
+* the dissimilarity between 2 clusters, i.e. the criteria that is used for 
+grouping clusters that have been composed:
+  ![](./figures/linkages.png)
+
+## Hierarchical Clustering Example: Iris dataset
+
+Again, we will use the Fisher's Iris dataset used before in the random 
+forest section. We will show that using hierarchical clustering of the observed
+attributes one can cluster flowers into groups corresponding to their species.
+
+```{r}
+?iris
+head(iris)
+```
+
+We will use the built-in function `hclust()` to perform hierarchical clustering.
+Only the data on the petal dimensions will be used for computing the distances
+between flower.
+
+```{r}
+?hclust
+# We use the Euclidean distance for the dissimilarities between flowers
+distMat <- dist(iris[, 3:4])
+
+# We use the "complete" linkage method for computing the cluster distances.
+clusters <- hclust(distMat, method = "complete")
+plot(clusters)
+```
+
+Inspecting the plot we see that a reasonable choice of the number of clusters is
+either 3 or 4.
+
+```{r}
+plot(clusters)
+abline(a = 2, b = 0, col = "blue")
+abline(a = 3, b = 0, col = "blue")
+```
+
+Let's pick 3 clusters. To get the leaves/observations 
+(flowers in this case) assignments using only 3 clusters from
+the *chopped* tree we can use a `cutree()` function.
+
+```{r}
+(clusterCut <- cutree(clusters, 3))
+```
+
+```{r}
+table(clusterCut, iris$Species)
+```
+
+From the table we see that the sentosa and virginica were correctly assigned to
+separate groups. However, the method had problems to group the versicolor
+flowers into a separate cluster.
+
+We can try another linkage method like "average" and see if we perform better.
+
+```{r}
+?hclust
+# We use the Euclidean distance for the dissimilarities between flowers
+distMat <- dist(iris[, 3:4])
+
+# We use the "complete" linkage method for computing the cluster distances.
+clusters <- hclust(distMat, method = "average")
+plot(clusters)
+```
+Here we can choose 3 or 5 clusters:
+```{r}
+plot(clusters)
+abline(a = 1.4, b = 0, col = "blue")
+abline(a = 0.8, b = 0, col = "blue")
+```
+
+Again we choose 3 clusters
+
+```{r}
+clusterCut <- cutree(clusters, 3)
+table(clusterCut, iris$Species)
+```
+
+We see that this time we do a little better in clustering the versicolors
+together.
+
+
+We now plot the flowers using petal dimensions as coordinates, 
+and show their cluster assignment as well as color points by species.
+
+```{r fig.height=6, fig.width=6}
+ggplot(iris, aes(Petal.Length, Petal.Width)) + theme_bw() +
+  geom_text(aes(label = clusterCut), vjust = -1) + 
+  geom_point(aes(color = Species))
+```
+
+
+
+
+
+
+
+
+

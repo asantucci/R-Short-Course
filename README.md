@@ -5,7 +5,8 @@
 - [ ] **Apply functions in R.**
 
 ### Session 2: 10:45 - 12
-- [ ] **Plotting in R (`base` `ggplot2`, and `ggmap`)**
+- [ ] **Plotting in R (`base` `ggplot2`, `plotly`)**
+- [ ] **Heatmaps in R (`heatmaply`)**
 
 ### Session 3: 2 - 3:15
 - [ ] **dplyr, data.table, parallel R**
