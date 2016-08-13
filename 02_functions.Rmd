@@ -1,0 +1,52 @@
+---
+title:  "Functions in R"
+author: "Andreas Santucci"
+output: html_document
+---
+
+# Functions as objects
+We can inspect the source-code for many R functions by simply typing the name of the function. For example, suppose we want to see how R implements a linear model.
+
+```{r, results='hold'}
+head(lm)
+tail(lm)
+```
+
+How can we interpret what is being displayed? 
+The function definition of `lm` is long, so we used `head` and `tail` to print out only the first few lines. 
+
+In this printout we see two components: the function *arguments* and the beginning of the function *body*.
+
+  * The function *arguments* of `lm` are named as `formula`, `data`, `subset`, `weights`,  etc.
+  * The function *body* or definition begins after the `{` brace on line 4. 
+  * The function *output* is the last expression in the body, just before the closing brace `}`.
+
+It's interesting to note that the fact that we can even pass `lm` as an input argument to functions `head` and `tail` mean that *arguments to functions
+may be functions themselves*.
+
+# Defining Functions
+We can define our own functions in R very easily.
+
+```{r}
+### Function: myFunction
+  # --------------------
+  # Input:  theta, measured in radians from 0 to 2*pi.
+  # Output: A pair of points (x,y) representing the point on the unit circle 
+  #         intersected by the input ray.
+myFunction <- function(theta) {
+    x <- cos(theta)
+    y <- sin(theta)
+    c(x, y)
+}
+```
+
+We can immediately use our function.
+
+```{r, results='hold'}
+myFunction(0)
+myFunction(pi/2)
+myFunction(pi)
+```
+
+
+
