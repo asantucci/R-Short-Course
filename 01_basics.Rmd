@@ -101,8 +101,6 @@ Sys.time()     # What time is it?
 as.Date('2016-12-31') - Sys.Date() # Number of days until New Years.
 ```
 
-### Exercise
-
 
 ### Exercise - Birthday countdown.
 Ask the neighbor next to you their birthday.
@@ -149,12 +147,12 @@ declare variables. Note that R is dynamically typed, which means that variable
 names are not statically fixed to a particular type or class of object.
 
 ```{r, results='hold'}
-x <- sample(letters, size = 10)
-class(x)
+z <- sample(letters, size = 10)
+class(z)
 ```
 
 ```{r, results='hold'}
-x <- sample(1:10)
+z <- sample(1:10)
 y <- sample(0:1, size = length(x), replace = T)
 
 class(x)
@@ -340,6 +338,36 @@ order.
 ```{r}
 as.factor(month.abb)
 ```
+
+Remember when we printed out the days in each month earlier?
+```{r}
+table(months(x))
+```
+
+Suppose we want to print the table in chronological (and not lexicographic) order.
+
+```{r}
+days <- data.frame(table(months(x)))
+names(days) <- c('month', 'nDays')
+days$month  <- as.character(days$month)
+
+str(days)
+```
+
+```{r}
+days$month <- factor(days$month, levels = month.name)
+```
+Specifically, the `factor` function takes an argument `levels`, for which we provide as value a character vector of month names in chronological order.
+
+Now, when we request the R re-orders our data-frame according to the sorting
+of the `month` variable, it will sort based on its `factor` ordering.
+
+```{r}
+days[order(days$month), ]
+```
+
+So, it turns out factors really are useful!
+
 
 # Resources for basic R
 We cite "A (very) short introduction to R" by Torfs and Brauer, and also 
