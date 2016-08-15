@@ -32,7 +32,7 @@ We can define our own functions in R very easily.
   # --------------------
   # Input:  theta, measured in radians from 0 to 2*pi.
   # Output: A pair of points (x,y) representing the point on the unit circle 
-  #         intersected by the input ray.
+  #         intersected by ray emanating from the origin at angle theta.
 myFunction <- function(theta) {
     x <- cos(theta)
     y <- sin(theta)
