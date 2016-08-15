@@ -2,38 +2,83 @@
 title:  "Basic Operations and Data-Types in R"
 author: "Andreas Santucci"
 output: html_document
+bibliography: bibliography.bib
+nocite: | 
+  @torfs_intro, @stack_resources, @r_inferno, @eddels_rev
 ---
 
 # R as an extensible calculator
 We evaluate a couple elementary mathematical expressions.
 
-```{r, results='hold'}
-2 * pi
-sqrt(100)
+```{r}
+2 * pi + sqrt(100)
 ```
 
-The `[1]` tells us the index of the first item in the row is 1.
-Notice that `pi` is a built-in constant. There are a select
-few other constants defined for each R session, such as months
+Notice that `pi` is a built-in __constant__, and that `sqrt()` is a built-in
+__function__.
+
+### Creating a vector of numbers
+We can easily create a vector of numbers and print the result
+to console.
+
+```{r}
+1:40
+```
+
+### Interpreting the output
+The `[1]` tells us the index of the first item in the row is 1, and if the output wraps around to a new-line, the subsequent `[.]`'s inform the index
+for the following entry.
+
+We may also feeding the anonymous vector as an input argument to another function.
+
+```{r}
+sum(1:100)
+```
+
+## Built-in Constants
+There are *countless other functions* in R but only a *select few other constants* defined. One such example is **months**
 
 ```{r, results='hold'}
 head(month.abb)
 tail(month.name)
 ```
 
-or the alphabet.
+or the **alphabet**.
 
 ```{r, results='hold'}
 head(letters)
 tail(LETTERS)
 ```
 
-Both of these are examples of *character-vectors*, i.e. a vector in which each element itself is a character-string. We can access individual elements of a vector by using the `[` operator.
+## Characters and Strings in R
+Both of these are examples of *character-vectors*, i.e. a vector in which each element itself is a character-string. In C, a character means a single byte (eight bits) which can represent unsigned integers 0-255, and a string is a sequence of null-terminated characters. In R, there is no notion of a character; the statistician is encouraged to think at the higher level of strings.
+
+## Accessing individual elements of an array
+We can access individual elements of a vector by using the `[` operator.
 
 ```{r}
-letters[2]
+letters[2]  # Emits second letter of the alphabet.
 ```
 
+We can omit elements at specific indices using the `-` as a prefix operator.
+
+```{r}
+letters[-(1:20)]  # Omit first twenty letters of alphabet.
+```
+
+Of course, arrays are easy to work with. We can access their total length
+
+```{r}
+length(letters)
+```
+
+or even concatenate arrays using the `c` operator.
+
+```{r}
+c(letters, month.abb)
+```
+
+## Dates
 R makes it easy to work with dates.
 
 ```{r, results='hold'}
@@ -54,6 +99,21 @@ Sys.Date()     # What day  is it?
 Sys.time()     # What time is it?
 
 as.Date('2016-12-31') - Sys.Date() # Number of days until New Years.
+```
+
+### Exercise
+
+
+### Exercise - Birthday countdown.
+Ask the neighbor next to you their birthday.
+Using R, generate a variable to hold your birthday and another
+variable to hold your neighbors birthday.
+
+Then, calculate the difference in age, measured in days.
+```{r,echo=F,results='hide'}
+myBirthday <- as.Date('1989-09-04')
+myNeighbor <- as.Date('1995-12-31')
+myNeighbor - myBirthday
 ```
 
 # Vectors
@@ -133,7 +193,11 @@ We may also use `TRUE` or `FALSE` (or `1` and `0`) as Boolean values.
 We may use Boolean vectors to indicate which elements to return when
 slicing arrays.
 
-```{r,results='hold'}
+### Exercise - Array access
+Create an expression which enables every element to be pulled out of object `b` which is divisible by 3.
+
+
+```{r,echo=F,results='hide'}
 head(b)
 head(b %% 3)
 head(b %% 3 == 0)
@@ -171,6 +235,7 @@ To access all rows (or columns) just omit the corresponding index.
 m[1:2, ]  # Extract first two rows, and all columns.
 ```
 
+### Relating Vectors and Matrices
 It turns out that actually, a matrix is simply a vector *with attributes*;
 specifically, a matrix is a vector arranged by column.
 
@@ -179,6 +244,14 @@ str(m)
 m[4]  # Non-conventional: Access the fourth element in the matrix
 ```
 
+This is useful in some contexts, e.g. when we wish to apply a function
+to all values in the matrix treated as a single input.
+
+```{r}
+mean(m)
+```
+
+### Note: Matrix entries must be homogeneous
 Note that the entries in a matrix must be homogeneous. E.g., it is permissible
 to have a matrix of numbers (or of characters), but not a matrix consisting of
 some numbers and some characters.
@@ -186,6 +259,7 @@ some numbers and some characters.
 ```{r}
 matrix(letters[1:9], nrow = 3)
 ```
+
 
 # Lists
 Lists are the most important construct in R. A list is a collection of named
@@ -267,3 +341,11 @@ order.
 as.factor(month.abb)
 ```
 
+# Resources for basic R
+We cite "A (very) short introduction to R" by Torfs and Brauer, and also 
+mention a [Stack Overflow Thread](http://stats.stackexchange.com/questions/138/free-resources-for-learning-r)
+pointing to several great resources for learning R basics. 
+
+For more detailed introductions, "The R Inferno" by Burns is often recommended. Personally, I learned many of my basics  from Joseph Adler's "R in a Nutshell".
+
+# Bibliography
