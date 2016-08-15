@@ -4,13 +4,19 @@ author: "Andreas Santucci"
 output: html_document
 ---
 
+R is designed to facilitate statistical analysis. To that end, it makes
+common data-operations such as ingestion, re-organization, visualization, and modeling quite simple to execute.
+
 # Loading Data
-We often want to start by loading some data into R. There are several basic ways. We may use the `read.table` command to read from a variety of different inputs. For example, we can read data from a web-page.
+We often want to start by loading some data into R. There are several basic ways. We may use the `read.table` command to read from a variety of different inputs. For example, the [following page](http://statweb.stanford.edu/~tibs/ElemStatLearn/datasets/LAozone.info.txt) hosts a LA-ozone data-file.
 
 ```{r}
-data <- read.table('http://www.stats.ox.ac.uk/pub/datasets/csb/ch11b.dat')
+webSite <- 'http://statweb.stanford.edu/~tibs/ElemStatLearn/datasets/LAozone.data'
+data <- read.table(webSite, sep = ',', header = TRUE)
 head(data)
 ```
+
+The main argument to `read.table` is a string dictating where the data-file is to be read from, whether it be locally stored on disk or hosted online.
 
 # Inspecting Data
 What are the dimensions of our data?
@@ -19,10 +25,10 @@ What are the dimensions of our data?
 dim(data)
 ```
 
-When our data is read, it is converted to a type of object in R called a `data.frame`. This is a way to hold a collection of vectors (numeric, character, or mixed) each the same length but possibly different types. We may index the rows and columns easily
+When our data is read, it is converted to a type of object in R called a `data.frame`. This is a way to hold a collection of vectors (numeric, character, or mixed) each the same length but possibly different types. We may extract a subset of rows and columns easily.
 
 ```{r}
-data[3:10, 2:ncol(data)]
+data[3:6, 2:ncol(data)]
 ```
 
 We might wish to know how our data are *structured*, in which case we may use the `str` command.
@@ -43,25 +49,34 @@ We can easily display graphical summaries of our data using basic commands like
 `hist` and `plot` for histograms and two-way scatter plots respectively.
 
 ```{r}
-hist(data$V3)
-plot(data$V3, data$V4)
+plot(data[, 1:4])        # Plot pairs among first several variables.
+hist(data$ozone)
 ```
 
 # Modeling
 We can easily construct a *linear model* using `lm`.
 
 ```{r}
-model <- lm(V4 ~ V3, data)
+model <- lm(vis ~ temp, data)  # Regress visibility as a function of temperature.
 summary(model)
+```
+
+We can easily update an existing model; the formula language is very expressive.
+
+```{r}
+### Add humidity and the interaction of temperature with humidity.
+update(model, . ~ . + humidity + temp*humidity)
 ```
 
 # R is Object Oriented
 Notice that when the `summary` function is called, its behavior depends on its
 input argument type. This is because each *object* in R is associated with a *class*, each of which come with a set of corresponding *methods*.
 
+```{r}
+head(summary.lm)
+head(summary.data.frame)
+```
+
+In the next module, we'll dive into the basics a bit further.
 
 
-That's a 10,000 foot overview of what a typical work-flow in R may look like.
-
-In the next module, we'll dive into the basics 
-a bit further.
