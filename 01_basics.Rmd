@@ -102,7 +102,7 @@ as.Date('2016-12-31') - Sys.Date() # Number of days until New Years.
 ```
 
 
-### Exercise - Birthday countdown.
+# Practice problem - Birthday countdown.
 Ask the neighbor next to you their birthday.
 Using R, generate a variable to hold your birthday and another
 variable to hold your neighbors birthday.
@@ -191,7 +191,7 @@ We may also use `TRUE` or `FALSE` (or `1` and `0`) as Boolean values.
 We may use Boolean vectors to indicate which elements to return when
 slicing arrays.
 
-### Exercise - Array access
+# Practice problem - Array access
 Create an expression which enables every element to be pulled out of object `b` which is divisible by 3.
 
 
@@ -368,6 +368,15 @@ days[order(days$month), ]
 
 So, it turns out factors really are useful!
 
+# Practice problem - using a factor in regression.
+Obtain data from the [following page](https://web.stanford.edu/~hastie/ElemStatLearn/datasets/bone.data).
+Regress \texttt{spnbmd} as a function of age and gender, using gender as a factor variable.
+Compare this with creating an indicator variable for each of the $k-1$ levels in a $k$-level factor variable.
+
+```{r, echo=F,results='hide'}
+data <- read.table('https://web.stanford.edu/~hastie/ElemStatLearn/datasets/bone.data', header = T)
+lm(spnbmd ~ age + gender, data)
+```
 
 # Resources for basic R
 We cite "A (very) short introduction to R" by Torfs and Brauer, and also 
