@@ -8,11 +8,11 @@ R is designed to facilitate statistical analysis. To that end, it makes
 common data-operations such as ingestion, re-organization, visualization, and modeling quite simple to execute.
 
 # Loading Data
-We often want to start by loading some data into R. There are several basic ways. We may use the `read.table` command to read from a variety of different inputs. For example, the [following page](http://statweb.stanford.edu/~tibs/ElemStatLearn/datasets/LAozone.info.txt) hosts a LA-ozone data-file.
+We often want to start by loading some data into R. There are several basic ways. We may use the `read.table` command to read from a variety of different inputs. For example, the [following page](https://web.stanford.edu/~hastie/ElemStatLearn/data.html) hosts a LA-ozone data-file.
 
 ```{r}
-webSite <- 'http://statweb.stanford.edu/~tibs/ElemStatLearn/datasets/LAozone.data'
-data <- read.table(webSite, sep = ',', header = TRUE)
+webSite <- 'https://web.stanford.edu/~hastie/ElemStatLearn/datasets/ozone.data'
+data <- read.table(webSite, sep = '\t', header = TRUE)
 head(data)
 ```
 
@@ -57,15 +57,15 @@ hist(data$ozone)
 We can easily construct a *linear model* using `lm`.
 
 ```{r}
-model <- lm(vis ~ temp, data)  # Regress visibility as a function of temperature.
+model <- lm(ozone ~ radiation, data)
 summary(model)
 ```
 
 We can easily update an existing model; the formula language is very expressive.
 
 ```{r}
-### Add humidity and the interaction of temperature with humidity.
-update(model, . ~ . + humidity + temp*humidity)
+### Add temperature interacted with radiation.
+update(model, . ~ . + temperature*radiation)
 ```
 
 # R is Object Oriented
@@ -78,5 +78,9 @@ head(summary.data.frame)
 ```
 
 In the next module, we'll dive into the basics a bit further.
+
+# Practice problem.
+Choose a dataset from the following source: [following page](https://web.stanford.edu/~hastie/ElemStatLearn/data.html).
+Load the data into R. How many rows does the data set have? Are there any variables containing missing observations?
 
 
