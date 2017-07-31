@@ -79,4 +79,192 @@ identical({set.seed(1); lapply(a, FUN)},
 
 In this case, our input object `a` did not have names to start with, hence our output from the `sapply` is not named either.
 
-# Iterative over multiple inputs
+# Iterating over multiple inputs - \texttt{mapply}
+
+If we think for a moment about the function `FUN` that we have been playing with this whole time, you may have realized that it was written such that I could determine whether the randomly added number was reproducible.
+
+As the function has currently been designed, we can tweak the range from which we draw as well as whether we want to set a seed, and we can apply any combination of these settings to an object using an apply.
+
+However, what we haven't seen how to do so far is to use \emph{different} options for each iteration. What if we wanted to tell our function through an input parameter, "I want to set the seed on the fourth iteration but not the third!". Is there an easy way to do this with apply functions? Of course!
+
+R has a function called `mapply` which is fairly flexible and allows us to apply a function to a list of input arguments. Let's suppose we want to set some options that change each time we apply our function.
+
+```{r}
+### An mapply is really just an sapply with a few bells and whistles...
+  # Good time to note the difference in syntax.
+identical(mapply(FUN, 1:10, PREDICTABLE = T),
+          sapply(1:10, FUN, PREDICTABLE = T))
+
+### Set an input declaring whether to seed or not
+rand <- sample(c(TRUE, FALSE), 10, replace = T)
+rand
+
+### Iterate over our input vector, 1:10...
+  # But also iterate over our input vector, rand
+mapply(FUN, 1:10, PREDICTABLE = rand)
+```
+
+# F.A.Q
+
+## What if I want it all?
+
+Some of you may be wondering if you can have it both ways. That is,
+can you tell R that you want to apply a function, and each time you apply it you want to hold some inputs constant and change other inputs.
+
+Of course, one approach would be to create perhaps a data frame or a set of vectors which reflect our intentions, where some vectors will vary and others will be constant. We could then take all of these and
+feed them into an `mapply` function, which we just learned about.
+But this is duplicates information in the inputs at the expense of RAM.
+There is a handy argument in `mapply` that allows a user to pass arguments which are to remain constant across iterations of the function application.
+
+```{r}
+
+### Plant seeds
+seeds <- sample(1L:1e5L, 10)
+
+### Always random, but with a different "seed" each time
+  # (Not! a good way to get random numbers)
+mapply(FUN, 1:10, seed = seeds,
+       MoreArgs = list(PREDICTABLE = T))
+```
+
+## What if I want to \texttt{apply} only
+
+Some of you may also be wondering when to use the apply functions which don't have any prefix.
+The syntax for the apply functions can be nice because it allows a two-dimensional object to be read in, and for the user to specify whether the function should be applied down each column or across each row.
+
+### Output Type
+One thing that happens under the hood of a prefix-less apply function is that the data is converted into a matrix or a vector when the procedure is being applied to the arguments.\footnote{If the input object has
+  multiple dimensions, it's converted to a matrix, otherwise, a vector.}This can be great and lend itself in some situtations, but for the novice R user they may be surprised to find that their \texttt{data.frame} with numeric and string variables got coerced into a matrix of strings.\footnote{We'll
+  see in the applied example later how there actually are certain times where
+  apply functions are exactly what we want.}
+
+### Data Frames as Lists
+As it turns out, a data frame is actually a list of columns. If we think about this for a second, it's actually a really useful concept because it means that we can apply a function across a series of variables in a data frame nicely.
+
+```{r}
+data <- data[[1]]
+
+### Apply our function to each column in our data
+lapply(data, FUN)[1:3]
+```
+
+This behavior is particularly handy in the sense that it not only makes extracting data out for analysis easy, it also makes it easy to insert modified results.
+
+```{r}
+### Set up column names.
+inputs <- c('V1', 'V4')
+new.names <- paste(inputs, 'noise', sep = '_')
+
+### Assign to new columns.
+data[, new.names] <- lapply(data[, inputs], FUN)
+data[, new.names]
+```
+
+# Practice problem - a cute ``apply'' problem
+
+Sometimes, using `apply` can result in much more elegant code. In the following example,
+we will examine a [Project Euler](https://projecteuler.net/problem=8).
+
+The problem: ``Given the following input stream 1,000 digits long, find the greatest product of 5 consecutive digits.''
+
+The input looks like a long string of digits:
+
+```{r}
+input <- "7316717653133062491922511967442657474235534919493496983520312774506326239578318016984801869478851843858615607891129494954595017379583319528532088055111254069874715852386305071569329096329522744304355766896648950445244523161731856403098711121722383113622298934233803081353362766142828064444866452387493035890729629049156044077239071381051585930796086670172427121883998797908792274921901699720888093776657273330010533678812202354218097512545405947522435258490771167055601360483958644670632441572215539753697817977846174064955149290862569321978468622482839722413756570560574902614079729686524145351004748216637048440319989000889524345065854122758866688116427171479924442928230863465674813919123162824586178664583591245665294765456828489128831426076900422421902267105562632111110937054421750694165896040807198403850962455444362981230987879927244284909188845801561660979191338754992005240636899125607176060588611646710940507754100225698315520005593572972571636269561882670428252483600823257530420752963450"
+
+paste0(substr(input, start = 1, stop = 45), "...")
+```
+
+To tackle this problem, it's useful to define a simple function. We note that the following example could be made more efficient by skipping all multiplication over subsets with a 0 value.
+
+```{r}
+Split <- function(obj, size) {
+    end <- length(obj) - size + 1
+    idx <- seq(1, end)
+    sapply(idx, function(i) obj[i:(i+size-1)])
+}
+
+digs <- unlist(strsplit(input, split = ""))
+nums <- as.numeric(digs)
+
+mat  <- Split(nums, 5)
+out  <- apply(mat, 2, prod)
+max(out)
+```
+
+## Notes on the Solution
+
+If the reader has a thorough grasp on the substitution method explained above, they are free to skip this section.
+
+We can break down this process and examine the pieces. The first step
+is to split our input vector into pieces or digits. Because we are
+using \texttt{strsplit}, our output is a character vector.
+
+```{r}
+head(digs)
+```
+
+Once we have the numbers split apart into a character vector, we can convert this to a numeric vector.
+
+```{r}
+nums <- as.numeric(digs)
+```
+
+We can then extract sequences of digits
+using our \texttt{Split} function, to create an ``input matrix'', where each
+column is a sequence of 5 consecutive digits from our vector of digits.
+
+```{r}
+mat[1:5, 1:5]
+```
+
+
+### Which Apply
+We wish to take the product along each column,
+and determine which sequence has the largest product. To rephrase,
+we wish to apply the \texttt{prod} function to each column of our matrix.
+
+However, in R, a matrix is simply a vector with row and column attributes. There is a check performed in \texttt{lapply} (and therefore
+\texttt{sapply}) regarding whether the input is a vector without attributes.
+Since the matrix has row and column names, the test returns \texttt{FALSE} and
+the object is coerced to a list before the function is applied.
+
+### `list` Vs. `as.list`
+It might be worth noting that when
+the conversion is done using ``as.list'', which
+is much different from ``list''. The former does more coercion.
+
+```{r}
+### Each element a vector of length one (nrow * ncol elements).
+  # A list with a single element - a matrix.
+paste(class(as.list(mat)), length(as.list(mat)))
+paste(class(   list(mat)), length(   list(mat)))
+
+```
+
+
+If we were to feed the matrix into an \texttt{lapply} or \texttt{sapply},
+first our input matrix would be ``flattened'' to a simple list,
+and then the \texttt{prod} function would be applied to each element, which is
+just one number. Another way to think about it: the output from an \texttt{(s|l)apply} would
+have the same length as the number of cells in our matrix.
+
+```{r}
+class(mat)  # It's stored as a matrix...
+str(mat)    # But it's really just a vector with attributes.
+
+### The function didn't do anything useful!
+str(sapply(mat, prod))
+```
+
+We wish to apply on operation along the columns of our matrix,
+and so we will no consider the \texttt{apply} function. This will result
+in an output with the same length as the number of columns in our matrix.
+
+```{r}
+head(out)
+length(out)
+```
+
+In this example, it turns out that using `apply` was the simplest solution.
+
