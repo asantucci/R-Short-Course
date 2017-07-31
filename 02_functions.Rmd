@@ -60,6 +60,7 @@ Notice that we may either use infix or prefix notation to call the function `+` 
 
 # Functions as arguments. A Toy Example
 Realize that in R, many functions are already vectorized, such as `+`.
+
 ```{r}
 1:10 + 21:30
 ```
@@ -76,3 +77,11 @@ all.equal(myProd(1:10), prod(1:10))  # Use all.equal to ignore type-difference.
 
 # Next: `Apply` Functions
 In the next section, we'll learn about `apply` functions, which themselves take in an object `X` with positive length and a function `FUN`; the function `FUN` is then applied to each element of object `X`.
+
+# Practice problem: birthday countdown
+Write a short R program which, given a birth-date, returns the number of days until said date. Check your answer with your neighbor.
+
+```{r}
+bdayCountdown <- function(date)
+  return(NULL)
+```
